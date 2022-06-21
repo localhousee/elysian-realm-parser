@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elysian Realm helper, kinda</title>
+
+    <style>
+        main {
+            display: flex;
+            flex-direction: column;
+            max-width: 960px;
+            margin: 0 auto;
+        }
+        pre {
+            overflow: auto;
+            overflow-wrap: break-word;
+            padding: 1rem;
+            margin: 1rem auto;
+            white-space: pre-wrap;
+        }
+
+        .block {
+            display: block
+        }
+
+        #actionJSON, #actionObj {
+            padding: 0.5rem;
+            margin-top: 0.5rem;
+            display: block;
+        }
+
+        #input {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h2>Hello there!</h2>
+
+        <div id="input">
+            <h3>Input:</h3>
+            <div style="display: flex; flex-direction:row;">
+                <div style="width: 50%;">
+                    <span class="block">JSON:</span>
+                    <textarea name="valkInputJSON" id="valkInputJSON" cols="30" rows="10" placeholder="Paste your valk info here"></textarea>
+                    <button id="actionJSON">Build markdown from JSON</button>
+                </div>
+                <div style="width: 50%;">
+                    <span class="block">JS Object (from sources):</span>
+                    <textarea name="valkInputObj" id="valkInputObj" cols="30" rows="10" placeholder="Paste your valk info here"></textarea>
+                    <button id="actionObj">Build markdown from Object</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="output">
+            <h3>Output (might take some time to load):</h3>
+            <div id="outputCode"></div>
+        </div>
+
+    </main>
+
+    <script src="https://unpkg.com/shiki"></script>
+    <script>
+        let buildFromJSON = (e) => {
+            let inp = document.getElementById('valkInputJSON') 
+            let valk = JSON.parse(inp.value)
+
+            build(valk)
+        }
+
+        let buildFromObj = (e) => {
+            let inp = document.getElementById('valkInputObj') 
+            eval('var valk='+inp.value) // not even close to safe, but who cares
+
+            console.dir(valk)
+
+            build(valk)
+        }
+
+        let build = (valk) => {
+            let result = ""
+            if (valk.builds.length >= 2) {
+                for (const build of valk.builds) {
+                    let title = "## -> " + build.name + " <-\n"
+                    let supports = buildSupports(build.supports)
+                    let signets = buildSignets(build.signets)
+                }
+            }
+
+            for (const build of valk.builds) {
+                let supports = buildSupports(build.supports)
+                let signets = buildSignets(build.signets)
+
+                let buildText = supports + "\n\n" + signets + "\n\n"
+
+                if (valk.builds.length >= 2) {
+                    let title = "## -> " + build.name + " <-\n"
+                    result += title + "\n" + buildText
+                } else {
+                    result += buildText
+                }
+            }
+
+            shiki.getHighlighter({theme: 'nord'})
+                .then(highlighter => {
+                    const resultCode = highlighter.codeToHtml(result, {lang: 'md'})
+                    document.getElementById("outputCode").innerHTML = resultCode
+                })
+        }
+
+        // let phasesOrder = {Early: 1, Mid: 2, Late: 3, default: 100}
+        let buildSupports = (supports) => {
+            let header = 'Time | Sigils | Support 1 | Support 2\n:------:|:------:|:------:|:------:\n'
+            let phases = []
+
+            // supports.sort((a, b) => (phasesOrder[a] || phasesOrder.default) - (phasesOrder[b] || phasesOrder.default))
+
+            supports.forEach(el => phases.push(el.time + " | " + el.sigils + " | " + el.support_1 + " | " + el.support_2))
+
+            return header + phases.join('\n')
+        }
+
+        // let signetsOrder = {Start: 1, '1st': 2, '2nd': 3, '3rd': 4, Filler: 5, No: 6, default: 100}
+        let buildSignets = (signets) => {
+            builds = []
+            for (const fc of signets) {
+                let title = "### -> " + getFCName(fc.name) + " <-\n"
+                let header = "Signet | Priority\n----|:----:\n"
+                let sigText = []
+
+                // fc.lists.sort((a, b) => (signetsOrder[a] || signetsOrder.default) - (signetsOrder[b] || signetsOrder.default))
+
+                fc.lists.forEach(el => {
+                    let prio = ""
+                    if (el.priority == "Start" || el.priority == "YES" || el.priority == "1st") {
+                        prio = "**" + el.priority + "**"
+                    } else {
+                        prio = el.priority
+                    }
+                    sigText.push("**" + el.name + "**: " + el.desc + " | " + prio)
+                })
+
+                builds.push(title + header + sigText.join("\n"))
+            }
+
+            return builds.join("\n\n")
+        }
+
+        let getFCName = (fc_) => {
+            // e.g. if "Kevin 2" -> ["Kevin", "2"]
+            let fcNameParts = fc_.split(" ")
+            let result = fcNameParts[0] + " - Signet of " + fc[fcNameParts[0].toLowerCase()]
+            if (fcNameParts[1] == "1") {
+                result += " (1st core)"
+            } else if (fcNameParts[1] == "2") {
+                result += " (2nd core)"
+            }
+
+            return result
+        }
+
+        const fc = {
+            "elysia": "■■",
+            "kevin": "Deliverance",
+            "eden": "Gold",
+            "kalpas": "Decimation",
+            "su": "Bodhi",
+            "sakura": "Setsuna",
+            "mobius": "Infinity",
+            "hua": "Vicissitude",
+            "aponia": "Discipline",
+            "vill-v": "Helix",
+            "kosma": "Daybreak",
+            "griseo": "Stars",
+            "pardofelis": "Reverie"
+        }
+
+        document.getElementById('actionJSON').onclick = buildFromJSON
+        document.getElementById('actionObj').onclick = buildFromObj
+    </script>
+</body>
+</html>
