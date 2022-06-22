@@ -63,6 +63,7 @@
 
         <div id="output">
             <h3>Output:</h3>
+            <button id="copyBtn">Click to copy</button>
             <pre id="outputCode"><code></code></pre>
         </div>
 
@@ -181,6 +182,16 @@
 
         document.getElementById('actionJSON').onclick = buildFromJSON
         document.getElementById('actionObj').onclick = buildFromObj
+
+        document.getElementById('copyBtn').onclick = (e) => {
+            navigator.clipboard.writeText(document.getElementById('outputCode').firstChild.textContent).then(
+                () => {
+                    console.log("copied text successfully!")
+                }, (err) => {
+                    console.log("can't copy text: ", err)
+                }
+            )
+        }
     </script>
 </body>
 </html>
