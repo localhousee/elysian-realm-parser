@@ -13,12 +13,17 @@
             max-width: 960px;
             margin: 0 auto;
         }
-        pre {
-            overflow: auto;
-            overflow-wrap: break-word;
+
+        #outputCode {
+            background-color: #2e3440ff;
+            color: #D8DEE9;
+            font-size: 14px;
+
             padding: 1rem;
             margin: 1rem auto;
             white-space: pre-wrap;
+            overflow: auto;
+            overflow-wrap: break-word;
         }
 
         .block {
@@ -57,13 +62,12 @@
         </div>
 
         <div id="output">
-            <h3>Output (might take some time to load):</h3>
-            <div id="outputCode"></div>
+            <h3>Output:</h3>
+            <pre id="outputCode"><code></code></pre>
         </div>
 
     </main>
 
-    <script src="https://unpkg.com/shiki"></script>
     <script>
         let buildFromJSON = (e) => {
             let inp = document.getElementById('valkInputJSON') 
@@ -105,11 +109,7 @@
                 }
             }
 
-            shiki.getHighlighter({theme: 'nord'})
-                .then(highlighter => {
-                    const resultCode = highlighter.codeToHtml(result, {lang: 'md'})
-                    document.getElementById("outputCode").innerHTML = resultCode
-                })
+            document.getElementById("outputCode").firstChild.append(result)
         }
 
         // let phasesOrder = {Early: 1, Mid: 2, Late: 3, default: 100}
