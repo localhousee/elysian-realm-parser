@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -30,7 +31,8 @@
             display: block
         }
 
-        #actionJSON, #actionObj {
+        #actionJSON,
+        #actionObj {
             padding: 0.5rem;
             margin-top: 0.5rem;
             display: block;
@@ -41,6 +43,7 @@
         }
     </style>
 </head>
+
 <body>
     <main>
         <h2>Hello there!</h2>
@@ -50,12 +53,14 @@
             <div style="display: flex; flex-direction:row;">
                 <div style="width: 50%;">
                     <span class="block">JSON:</span>
-                    <textarea name="valkInputJSON" id="valkInputJSON" cols="30" rows="10" placeholder="Paste your valk info here"></textarea>
+                    <textarea name="valkInputJSON" id="valkInputJSON" cols="30" rows="10"
+                        placeholder="Paste your valk info here"></textarea>
                     <button id="actionJSON">Build markdown from JSON</button>
                 </div>
                 <div style="width: 50%;">
                     <span class="block">JS Object (from sources):</span>
-                    <textarea name="valkInputObj" id="valkInputObj" cols="30" rows="10" placeholder="Paste your valk info here"></textarea>
+                    <textarea name="valkInputObj" id="valkInputObj" cols="30" rows="10"
+                        placeholder="Paste your valk info here"></textarea>
                     <button id="actionObj">Build markdown from Object</button>
                 </div>
             </div>
@@ -77,94 +82,57 @@
             build(valk)
         }
 
-        let buildFromObj = (e) => {
-            let inp = document.getElementById('valkInputObj') 
-            eval('var valk='+inp.value) // not even close to safe, but who cares
-
-            console.dir(valk)
-
-            build(valk)
+        let objectToRentry = () => {
+            let data = document.getElementById('valkInputObj')
+            eval(`var valkyrie = ${data.value}`) // TRAILING COMMA IS FUCKING DISASTER
+            parse(valkyrie)
         }
 
-        let build = (valk) => {
+        let parse = (valkyrie) => {
             let result = ""
-            if (valk.builds.length >= 2) {
-                for (const build of valk.builds) {
-                    let title = "## -> " + build.name + " <-\n"
-                    let supports = buildSupports(build.supports)
-                    let signets = buildSignets(build.signets)
-                }
-            }
 
-            for (const build of valk.builds) {
+            for (const build of valkyrie.builds) {
+                let title = valkyrie.builds.length > 1 ? `## -> ${build.name} <-\n\n` : ""
                 let supports = buildSupports(build.supports)
                 let signets = buildSignets(build.signets)
 
-                let buildText = supports + "\n\n" + signets + "\n\n"
-
-                if (valk.builds.length >= 2) {
-                    let title = "## -> " + build.name + " <-\n"
-                    result += title + "\n" + buildText
-                } else {
-                    result += buildText
-                }
+                result += `${title} ${supports} \n\n ${signets} \n\n`
             }
 
-            document.getElementById("outputCode").firstChild.append(result)
+            document.getElementById("outputCode").innerHTML = result
         }
 
         // let phasesOrder = {Early: 1, Mid: 2, Late: 3, default: 100}
         let buildSupports = (supports) => {
-            let header = 'Time | Sigils | Support 1 | Support 2\n:------:|:------:|:------:|:------:\n'
-            let phases = []
-
-            // supports.sort((a, b) => (phasesOrder[a] || phasesOrder.default) - (phasesOrder[b] || phasesOrder.default))
-
+            let phases = ['Time | Sigils | Support 1 | Support 2\n:------:|:------:|:------:|:------:']
             supports.forEach(el => phases.push(el.time + " | " + el.sigils + " | " + el.support_1 + " | " + el.support_2))
 
-            return header + phases.join('\n')
+            return phases.join('\n')
         }
 
         // let signetsOrder = {Start: 1, '1st': 2, '2nd': 3, '3rd': 4, Filler: 5, No: 6, default: 100}
         let buildSignets = (signets) => {
             builds = []
-            for (const fc of signets) {
-                let title = "### -> " + getFCName(fc.name) + " <-\n"
-                let header = "Signet | Priority\n----|:----:\n"
-                let sigText = []
+            for (const signet of signets) {
+                let table = [`### -> ${getFCName(signet.name)} <-`, 'Signet | Priority', '----|:----:']
 
-                // fc.lists.sort((a, b) => (signetsOrder[a] || signetsOrder.default) - (signetsOrder[b] || signetsOrder.default))
-
-                fc.lists.forEach(el => {
-                    let prio = ""
-                    if (el.priority == "Start" || el.priority == "YES" || el.priority == "1st") {
-                        prio = "**" + el.priority + "**"
-                    } else {
-                        prio = el.priority
-                    }
-                    sigText.push("**" + el.name + "**: " + el.desc + " | " + prio)
+                signet.lists.forEach(el => {
+                    prio = 'Start YES 1st'.includes(el.priority) ? `**${el.priority}**` : el.priority
+                    table.push("**" + el.name + "**: " + el.desc + " | " + prio)
                 })
 
-                builds.push(title + header + sigText.join("\n"))
+                builds.push(table.join("\n"))
             }
 
             return builds.join("\n\n")
         }
 
-        let getFCName = (fc_) => {
-            // e.g. if "Kevin 2" -> ["Kevin", "2"]
-            let fcNameParts = fc_.split(" ")
-            let result = fcNameParts[0] + " - Signet of " + fc[fcNameParts[0].toLowerCase()]
-            if (fcNameParts[1] == "1") {
-                result += " (1st core)"
-            } else if (fcNameParts[1] == "2") {
-                result += " (2nd core)"
-            }
-
-            return result
+        let getFCName = (flamechaser) => {
+            let fcNameParts = flamechaser.split(" ")
+            return `${fcNameParts[0]} - Signet of ${FC[fcNameParts[0].toLowerCase()]} ${fcNameParts[1] === "1" ? "(1st Core)" : `${fcNameParts[1] === "2" ? "(2nd Core)" : ""}`}`
         }
 
-        const fc = {
+        const FC = {
             "elysia": "■■",
             "kevin": "Deliverance",
             "eden": "Gold",
@@ -181,7 +149,7 @@
         }
 
         document.getElementById('actionJSON').onclick = buildFromJSON
-        document.getElementById('actionObj').onclick = buildFromObj
+        document.getElementById('actionObj').onclick = objectToRentry
 
         document.getElementById('copyBtn').onclick = (e) => {
             navigator.clipboard.writeText(document.getElementById('outputCode').firstChild.textContent).then(
@@ -194,4 +162,5 @@
         }
     </script>
 </body>
+
 </html>
