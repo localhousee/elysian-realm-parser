@@ -1,170 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elysian Realm helper, kinda</title>
-
-    <style>
-        main {
-            display: flex;
-            flex-direction: column;
-            max-width: 960px;
-            margin: 0 auto;
+    <script src="https://cdn.tailwindcss.com">
+        tailwind.config = {
+            plugins: [
+                require('@tailwindcss/forms'),
+            ]
         }
-
-        #outputCode {
-            background-color: #2e3440ff;
-            color: #D8DEE9;
-            font-size: 14px;
-
-            padding: 1rem;
-            margin: 1rem auto;
-            white-space: pre-wrap;
-            overflow: auto;
-            overflow-wrap: break-word;
-        }
-
-        .block {
-            display: block
-        }
-
-        #actionJSON, #actionObj {
-            padding: 0.5rem;
-            margin-top: 0.5rem;
-            display: block;
-        }
-
-        #input {
-            margin-bottom: 1rem;
-        }
-    </style>
+    </script>
 </head>
+
 <body>
     <main>
-        <h2>Hello there!</h2>
+        <h2 class="text-center uppercase text-4xl mb-8 mt-4 tracking-widest font-medium">Elysian Realm Parser</h2>
 
-        <div id="input">
-            <h3>Input:</h3>
-            <div style="display: flex; flex-direction:row;">
-                <div style="width: 50%;">
-                    <span class="block">JSON:</span>
-                    <textarea name="valkInputJSON" id="valkInputJSON" cols="30" rows="10" placeholder="Paste your valk info here"></textarea>
-                    <button id="actionJSON">Build markdown from JSON</button>
+        <div class="flex w-full px-16 space-x-3">
+            <div class="w-full">
+                <div class="flex w-full justify-between pb-2 space-x-2">
+                    <select name="type" id="type" class="cursor-pointer w-full bg-transparent border border-blue-500 rounded-lg pl-2">
+                        <option value="json">JSON</option>
+                        <option value="object">Object</option>
+                    </select>
+                    <button class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-blue-700" id="action">Build</button>
                 </div>
-                <div style="width: 50%;">
-                    <span class="block">JS Object (from sources):</span>
-                    <textarea name="valkInputObj" id="valkInputObj" cols="30" rows="10" placeholder="Paste your valk info here"></textarea>
-                    <button id="actionObj">Build markdown from Object</button>
+                <textarea id="input"
+                    class="p-3 caret-indigo-500 cursor-indigo-500 text-indigo-900 border border-indigo-600 focus:ring-0 focus:outline-none rounded-md w-full h-96 resize-none"
+                    placeholder="Paste your valk info here"></textarea>
+            </div>
+            <div class="w-full relative mt-12">
+                <div class="absolute right-2 top-2">
+                    <button id="copy" class="p-2 bg-indigo-500 text-white rounded-lg hover:bg-blue-700">
+                        <svg id="clipboard" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        <svg id="clipboard-check" class="hidden" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                        </svg>
+                    </button>
                 </div>
+                <textarea id="output" placeholder="Result" readonly
+                    class="cursor-default p-3 cursor-indigo-500 text-indigo-900 border border-indigo-600 focus:ring-0 focus:outline-none rounded-md w-full h-96 resize-none"></textarea>
             </div>
         </div>
-
-        <div id="output">
-            <h3>Output:</h3>
-            <button id="copyBtn">Click to copy</button>
-            <pre id="outputCode"><code></code></pre>
-        </div>
-
     </main>
 
     <script>
-        let buildFromJSON = (e) => {
-            let inp = document.getElementById('valkInputJSON') 
-            let valk = JSON.parse(inp.value)
+        let handleInput = () => {
+            var valkyrie = ""
+            let data = document.getElementById('input').value
+            let type = document.getElementById("type").value
 
-            build(valk)
+            type === "json" ? valkyrie = JSON.parse(data) : eval(`var valkyrie = ${data}`) // TRAILING COMMA IS FUCKING DISASTER
+            parse(valkyrie)
         }
 
-        let buildFromObj = (e) => {
-            let inp = document.getElementById('valkInputObj') 
-            eval('var valk='+inp.value) // not even close to safe, but who cares
-
-            console.dir(valk)
-
-            build(valk)
-        }
-
-        let build = (valk) => {
+        let parse = (valkyrie) => {
             let result = ""
-            if (valk.builds.length >= 2) {
-                for (const build of valk.builds) {
-                    let title = "## -> " + build.name + " <-\n"
-                    let supports = buildSupports(build.supports)
-                    let signets = buildSignets(build.signets)
-                }
-            }
 
-            for (const build of valk.builds) {
+            for (const build of valkyrie.builds) {
+                let title = valkyrie.builds.length > 1 ? `## -> ${build.name} <-\n\n` : ""
                 let supports = buildSupports(build.supports)
                 let signets = buildSignets(build.signets)
 
-                let buildText = supports + "\n\n" + signets + "\n\n"
-
-                if (valk.builds.length >= 2) {
-                    let title = "## -> " + build.name + " <-\n"
-                    result += title + "\n" + buildText
-                } else {
-                    result += buildText
-                }
+                result += `${title} ${supports} \n\n ${signets} \n\n`
             }
 
-            document.getElementById("outputCode").firstChild.append(result)
+            document.getElementById("output").innerHTML = result
         }
 
         // let phasesOrder = {Early: 1, Mid: 2, Late: 3, default: 100}
         let buildSupports = (supports) => {
-            let header = 'Time | Sigils | Support 1 | Support 2\n:------:|:------:|:------:|:------:\n'
-            let phases = []
-
-            // supports.sort((a, b) => (phasesOrder[a] || phasesOrder.default) - (phasesOrder[b] || phasesOrder.default))
-
+            let phases = ['Time | Sigils | Support 1 | Support 2\n:------:|:------:|:------:|:------:']
             supports.forEach(el => phases.push(el.time + " | " + el.sigils + " | " + el.support_1 + " | " + el.support_2))
 
-            return header + phases.join('\n')
+            return phases.join('\n')
         }
 
         // let signetsOrder = {Start: 1, '1st': 2, '2nd': 3, '3rd': 4, Filler: 5, No: 6, default: 100}
         let buildSignets = (signets) => {
             builds = []
-            for (const fc of signets) {
-                let title = "### -> " + getFCName(fc.name) + " <-\n"
-                let header = "Signet | Priority\n----|:----:\n"
-                let sigText = []
+            for (const signet of signets) {
+                let table = [`### -> ${getFCName(signet.name)} <-`, 'Signet | Priority', '----|:----:']
 
-                // fc.lists.sort((a, b) => (signetsOrder[a] || signetsOrder.default) - (signetsOrder[b] || signetsOrder.default))
-
-                fc.lists.forEach(el => {
-                    let prio = ""
-                    if (el.priority == "Start" || el.priority == "YES" || el.priority == "1st") {
-                        prio = "**" + el.priority + "**"
-                    } else {
-                        prio = el.priority
-                    }
-                    sigText.push("**" + el.name + "**: " + el.desc + " | " + prio)
+                signet.lists.forEach(el => {
+                    prio = 'Start YES 1st'.includes(el.priority) ? `**${el.priority}**` : el.priority
+                    table.push("**" + el.name + "**: " + el.desc + " | " + prio)
                 })
 
-                builds.push(title + header + sigText.join("\n"))
+                builds.push(table.join("\n"))
             }
 
             return builds.join("\n\n")
         }
 
-        let getFCName = (fc_) => {
-            // e.g. if "Kevin 2" -> ["Kevin", "2"]
-            let fcNameParts = fc_.split(" ")
-            let result = fcNameParts[0] + " - Signet of " + fc[fcNameParts[0].toLowerCase()]
-            if (fcNameParts[1] == "1") {
-                result += " (1st core)"
-            } else if (fcNameParts[1] == "2") {
-                result += " (2nd core)"
-            }
-
-            return result
+        let getFCName = (flamechaser) => {
+            let fcNameParts = flamechaser.split(" ")
+            return `${fcNameParts[0]} - Signet of ${FC[fcNameParts[0].toLowerCase()]} ${fcNameParts[1] === "1" ? "(1st Core)" : `${fcNameParts[1] === "2" ? "(2nd Core)" : ""}`}`
         }
 
-        const fc = {
+        const FC = {
             "elysia": "■■",
             "kevin": "Deliverance",
             "eden": "Gold",
@@ -180,18 +123,19 @@
             "pardofelis": "Reverie"
         }
 
-        document.getElementById('actionJSON').onclick = buildFromJSON
-        document.getElementById('actionObj').onclick = buildFromObj
+        document.getElementById('action').onclick = handleInput
 
-        document.getElementById('copyBtn').onclick = (e) => {
-            navigator.clipboard.writeText(document.getElementById('outputCode').firstChild.textContent).then(
+        document.getElementById('copy').onclick = () => {
+            navigator.clipboard.writeText(document.getElementById('output').value).then(
                 () => {
-                    console.log("copied text successfully!")
+                    document.getElementById("clipboard").style.display = "none"
+                    document.getElementById("clipboard-check").style.display = "block"
                 }, (err) => {
-                    console.log("can't copy text: ", err)
+                    alert("can't copy text: ", err)
                 }
             )
         }
     </script>
 </body>
+
 </html>
